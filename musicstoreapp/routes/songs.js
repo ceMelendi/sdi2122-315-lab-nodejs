@@ -1,13 +1,31 @@
 module.exports=function (app) {
 
     app.get("/songs", function(req, res) {
-        let response = "";
-        if (req.query.title != null && typeof(req.query.title) != "undefined")
-            response = 'Titulo: ' + req.query.title + '<br>'
-        if (req.query.author != null && typeof(req.query.author) != "undefined")
-            response += 'Author: ' + req.query.author;
+        let songs = [{
+            "title": "Blank Space",
+            "price": "1.2"
+        },{
+            "title": "See you again",
+            "price": "1.3"
+        },{
+            "title": "Uptown funk",
+            "price": "1.1"
+        },{
+            "title": "Don't Wanna Cry",
+            "price": "1.4"
+        }];
 
-        res.send(response);
+
+        let response = {
+            seller:'Tienda de canciones',
+            songs: songs
+        };
+
+        res.render("shop.twig", response);
+    });
+
+    app.get('/songs/add', function (req, res) {
+        res.render("add.twig");
     });
 
     app.get('/add', function(req, res) {
@@ -34,7 +52,7 @@ module.exports=function (app) {
         res.send(response);
     });
 
-    //promocionar responde a esta ruta
+    //promocionar responde a esta ruta ya que está definido antes (mayor prioridad)
     app.get('/promo*', function (req, res) {
         res.send('Respuesta al patrón promo*');
     });
