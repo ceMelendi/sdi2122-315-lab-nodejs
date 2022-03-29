@@ -13,6 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 let indexRouter = require('./routes/index');
 let usersRouter = require('./routes/users');
 require("./routes/songs.js")(app);
+require("./routes/authors.js")(app);
 
 
 // view engine setup
