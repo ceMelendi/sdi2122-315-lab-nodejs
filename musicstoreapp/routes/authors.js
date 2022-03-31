@@ -25,7 +25,28 @@ module.exports=function (app) {
 
 
     app.get('/authors/add', function(req,res) {
-        res.render("authors/add.twig");
+        let roles = [{
+            "name": "Cantante",
+            "value": "singer"
+        },{
+            "name": "Batería",
+            "value": "drum"
+        },{
+            "name": "Guitarrista",
+            "value": "guitar"
+        },{
+            "name": "Bajista",
+            "value": "bass"
+        },{
+            "name": "Teclista",
+            "value": "keyboard"
+        }];
+
+        let response = {
+            roles: roles
+        };
+
+        res.render("authors/add.twig", response);
     });
 
     app.post('/authors/add', function (req,res){
