@@ -1,4 +1,4 @@
-module.exports=function (app) {
+module.exports=function (app, MongoClient) {
 
     app.get("/songs", function(req, res) {
         let songs = [{
@@ -45,11 +45,25 @@ module.exports=function (app) {
     });
 
     app.post('/songs/add', function (req,res){
-        let response = "Canción agregada: " + req.body.title + "<br>"
-            + " género: " + req.body.kind + "<br>"
-            + " precio: " + req.body.price;
+        let song = {
+            title: req.body.title,
+            kind: req.body.kind,
+            price: req.body.price
+        };
 
-        res.send(response);
+        MongoClient.connect(app.get('connectionStrings'), function (err, dbClient) {
+            if (err) {
+                res.send("Error de conexión: " + err);
+            } else {
+                const database = dbClient.db("musicStore");
+                const collectionName = 'songs';
+                const songsCollection = database.collection(collectionName);
+                songsCollection.insertOne(song)
+                    .then(result => res.send("canción añadida id: " + result.insertedId))
+                    .then(() => dbClient.close())
+                    .catch(err => res.send("Error al insertar " + err));
+            }
+        });
     });
 
     //promocionar responde a esta ruta ya que está definido antes (mayor prioridad)
