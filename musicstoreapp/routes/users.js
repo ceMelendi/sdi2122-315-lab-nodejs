@@ -1,10 +1,12 @@
 module.exports = function (app, usersRepository) {
   app.get('/users', function (req, res) {
     res.send('lista de usuarios');
-  })
+  });
+
   app.get('/users/signup', function (req, res) {
     res.render("signup.twig");
-  })
+  });
+
   app.post('/users/signup', function (req, res) {
     let securePassword = app.get("crypto").createHmac('sha256', app.get('clave'))
         .update(req.body.password).digest('hex');
@@ -13,14 +15,16 @@ module.exports = function (app, usersRepository) {
       password: securePassword
     }
     usersRepository.insertUser(user).then(userId => {
-      res.send('Usuario registrado ' + userId);
+      res.redirect('/users/login');
     }).catch(error => {
       res.send("Error al insertar el usuario: " + error);
     });
   });
+
   app.get('/users/login', function (req, res) {
     res.render("login.twig");
   });
+
   app.post('/users/login', function (req, res) {
     let securePassword = app.get("crypto").createHmac('sha256', app.get('clave'))
         .update(req.body.password).digest('hex');
@@ -35,7 +39,7 @@ module.exports = function (app, usersRepository) {
         res.send("Usuario no identificado");
       } else {
         req.session.user = user.email;
-        res.send("Usuario identificado correctamente: " + user.email);
+        res.redirect('/publications');
       }
     }).catch(error => {
       req.session.user = null;

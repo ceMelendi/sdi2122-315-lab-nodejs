@@ -43,6 +43,44 @@ module.exports=function (app, songsRepository, commentsRepository) {
         res.render("songs/add.twig");
     });
 
+    app.post('/songs/add', function (req,res){
+        let song = {
+            title: req.body.title,
+            kind: req.body.kind,
+            price: req.body.price,
+            author: req.session.user
+        };
+
+        songsRepository.insertSong(song, function (songId){
+            if (songId == null) {
+                res.send("Error al insertar canción");
+            }
+            else {
+                if (req.files != null) {
+                    let imagen = req.files.cover;
+                    imagen.mv(app.get("uploadPath") + '/public/covers/' + songId + '.png', function (err) {
+                        if (err) {
+                            res.send("Error al subir la portada de la canción")
+                        } else {
+                            if (req.files.audio != null) {
+                                let audio = req.files.audio;
+                                audio.mv(app.get("uploadPath") + '/public/audios/' + songId + '.mp3', function (err) {
+                                    if (err) {
+                                        res.send("Error al subir el audio");
+                                    } else {
+                                        res.redirect('/publications');
+                                    }
+                                });
+                            }
+                        }
+                    })
+                } else {
+                    res.redirect('/publications');
+                }
+            }
+        })
+    });
+
     app.get('/add', function(req, res) {
         let response = parseInt(req.query.num1) + parseInt(req.query.num2);
         res.send(String(response));
@@ -73,7 +111,7 @@ module.exports=function (app, songsRepository, commentsRepository) {
                 if (result == null) {
                     res.send("Error al actualizar la portada o el audio de la  canción");
                 } else {
-                    res.send("Se ha modificado el registro correctamente");
+                    res.redirect('/publications');
                 }
             });
         }).catch(error => {
@@ -110,44 +148,6 @@ module.exports=function (app, songsRepository, commentsRepository) {
             callback(true); // FIN
         }
     };
-
-    app.post('/songs/add', function (req,res){
-        let song = {
-            title: req.body.title,
-            kind: req.body.kind,
-            price: req.body.price,
-            author: req.session.user
-        };
-
-        songsRepository.insertSong(song, function (songId){
-            if (songId == null) {
-                res.send("Error al insertar canción");
-            }
-            else {
-                if (req.files != null) {
-                    let imagen = req.files.cover;
-                    imagen.mv(app.get("uploadPath") + '/public/covers/' + songId + '.png', function (err) {
-                        if (err) {
-                            res.send("Error al subir la portada de la canción")
-                        } else {
-                            if (req.files.audio != null) {
-                                let audio = req.files.audio;
-                                audio.mv(app.get("uploadPath") + '/public/audios/' + songId + '.mp3', function (err) {
-                                    if (err) {
-                                        res.send("Error al subir el audio");
-                                    } else {
-                                        res.send("Agregada la canción ID: " + songId);
-                                    }
-                                });
-                            }
-                        }
-                    })
-                } else {
-                    res.send("Agregada la canción ID: " + songId)
-                }
-            }
-        })
-    });
 
     app.get('/songs/delete/:id', function (req, res) {
         let filter = {_id: ObjectId(req.params.id)};
