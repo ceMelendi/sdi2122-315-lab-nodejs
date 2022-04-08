@@ -53,29 +53,39 @@ module.exports=function (app, songsRepository, commentsRepository) {
 
         songsRepository.insertSong(song, function (songId){
             if (songId == null) {
-                res.send("Error al insertar canción");
+                res.redirect("/publications" +
+                    "?message=Error al insertar canción." +
+                    "&messageType=alert.danger");
             }
             else {
                 if (req.files != null) {
                     let imagen = req.files.cover;
                     imagen.mv(app.get("uploadPath") + '/public/covers/' + songId + '.png', function (err) {
                         if (err) {
-                            res.send("Error al subir la portada de la canción")
+                            res.redirect("/publications" +
+                                "?message=Error al subir la portada de la canción." +
+                                "&messageType=alert.danger");
                         } else {
                             if (req.files.audio != null) {
                                 let audio = req.files.audio;
                                 audio.mv(app.get("uploadPath") + '/public/audios/' + songId + '.mp3', function (err) {
                                     if (err) {
-                                        res.send("Error al subir el audio");
+                                        res.redirect("/publications" +
+                                            "?message=Error al subir el audio." +
+                                            "&messageType=alert.danger");
                                     } else {
-                                        res.redirect('/publications');
+                                        res.redirect("/publications" +
+                                            "?message=Canción añadida correctamente." +
+                                            "&messageType=alert.info");
                                     }
                                 });
                             }
                         }
                     })
                 } else {
-                    res.redirect('/publications');
+                    res.redirect('/publications');res.redirect("/publications" +
+                        "?message=Canción añadida correctamente." +
+                        "&messageType=alert.info");
                 }
             }
         })
@@ -91,7 +101,9 @@ module.exports=function (app, songsRepository, commentsRepository) {
         songsRepository.findSong(filter, {}).then(song => {
             res.render("songs/edit.twig", {song: song});
         }).catch(error => {
-            res.send("Se ha producido un error al recuperar la canción " + error);
+            res.redirect("/publications" +
+                "?message=Se ha producido un error al recuperar la canción " + error +
+                "&messageType=alert.info");
         });
     });
 
@@ -109,13 +121,19 @@ module.exports=function (app, songsRepository, commentsRepository) {
         songsRepository.updateSong(song, filter, options).then(result => {
             step1UpdateCover(req.files, songId, function (result) {
                 if (result == null) {
-                    res.send("Error al actualizar la portada o el audio de la  canción");
+                    res.redirect("/publications" +
+                        "?message=Error al actualizar la portada o el audio de la  canción." +
+                        "&messageType=alert.danger");
                 } else {
-                    res.redirect('/publications');
+                    res.redirect("/publications" +
+                        "?message=Canción modificada correctamente." +
+                        "&messageType=alert.info");
                 }
             });
         }).catch(error => {
-            res.send("Se ha producido un error al modificar la canción " + error)
+            res.redirect("/publications" +
+                "?message=Se ha producido un error al modificar la canción " + error +
+                "&messageType=alert.info");
         });
     });
 
@@ -153,12 +171,18 @@ module.exports=function (app, songsRepository, commentsRepository) {
         let filter = {_id: ObjectId(req.params.id)};
         songsRepository.deleteSong(filter, {}).then(result => {
             if (result == null || result.deletedCount == 0) {
-                res.send("No se ha podido eliminar el registro");
+                res.redirect("/publications" +
+                    "?message=No se ha podido eliminar el registro." +
+                    "&messageType=alert.danger");
             } else {
-                res.redirect("/publications");
+                res.redirect("/publications" +
+                    "?message=Canción eliminada correctamente." +
+                    "&messageType=alert.info");
             }
         }).catch(error => {
-            res.send("Se ha producido un error al intentar eliminar la canción: " + error)
+            res.redirect("/publications" +
+                "?message=Se ha producido un error al intentar eliminar la canción: " + error +
+                "&messageType=alert.info");
         });
     });
 
