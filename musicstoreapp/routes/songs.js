@@ -111,30 +111,6 @@ module.exports=function (app, songsRepository, commentsRepository) {
         }
     };
 
-    app.get('/songs/:id', function(req, res) {
-        let filter = {_id: ObjectId(req.params.id)};
-        let options = {};
-
-        songsRepository.findSong(filter, options).then(song => {
-
-            let filterComment = {song_id: song._id};
-            commentsRepository.getComments(filterComment, options).then(comments => {
-                res.render("songs/song.twig", {song: song, comments: comments});
-            }).catch(error => {
-                res.send("Se ha producido un error al buscar los comentarios " + error)
-            });
-
-        }).catch(error => {
-            res.send("Se ha producido un error al buscar la canción " + error)
-        });
-    });
-
-    app.get('/songs/:kind/:id', function(req, res) {
-        let response = 'id: ' + req.params.id + '<br>'
-            + 'Tipo de música: ' + req.params.kind;
-        res.send(response);
-    });
-
     app.post('/songs/add', function (req,res){
         let song = {
             title: req.body.title,
@@ -171,6 +147,43 @@ module.exports=function (app, songsRepository, commentsRepository) {
                 }
             }
         })
+    });
+
+    app.get('/songs/delete/:id', function (req, res) {
+        let filter = {_id: ObjectId(req.params.id)};
+        songsRepository.deleteSong(filter, {}).then(result => {
+            if (result == null || result.deletedCount == 0) {
+                res.send("No se ha podido eliminar el registro");
+            } else {
+                res.redirect("/publications");
+            }
+        }).catch(error => {
+            res.send("Se ha producido un error al intentar eliminar la canción: " + error)
+        });
+    });
+
+    app.get('/songs/:id', function(req, res) {
+        let filter = {_id: ObjectId(req.params.id)};
+        let options = {};
+
+        songsRepository.findSong(filter, options).then(song => {
+
+            let filterComment = {song_id: song._id};
+            commentsRepository.getComments(filterComment, options).then(comments => {
+                res.render("songs/song.twig", {song: song, comments: comments});
+            }).catch(error => {
+                res.send("Se ha producido un error al buscar los comentarios " + error)
+            });
+
+        }).catch(error => {
+            res.send("Se ha producido un error al buscar la canción " + error)
+        });
+    });
+
+    app.get('/songs/:kind/:id', function(req, res) {
+        let response = 'id: ' + req.params.id + '<br>'
+            + 'Tipo de música: ' + req.params.kind;
+        res.send(response);
     });
 
     app.get('/publications', function (req, res) {
