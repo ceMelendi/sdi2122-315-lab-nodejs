@@ -212,17 +212,35 @@ module.exports=function (app, songsRepository, commentsRepository) {
             user: req.session.user,
             songId: songId
         }
-        songsRepository.buySong(shop, function (shopId) {
-            if (shopId == null) {
-                res.redirect("/shop" +
-                    "?message=Error al realizar la compra." +
-                    "&messageType=alert.danger");
-            } else {
-                res.redirect("/purchases" +
-                    "?message=Compra realizada correctamente." +
-                    "&messageType=alert.info");
-            }
-        })
+        let filter = {_id: ObjectId(req.params.id)};
+        let options = {};
+
+        songsRepository.findSong(filter, options).then(song => {
+            let canBuySong = req.session.user !== song.author; //not the author -> can buy song
+            let filterPurchases = {user: req.session.user};
+            songsRepository.getPurchases(filterPurchases, options).then(purchases => {
+                if (purchases.find(s => s.songId.equals(song._id)) != null)
+                    canBuySong = false;
+                if (canBuySong) {
+                    songsRepository.buySong(shop, function (shopId) {
+                        if (shopId == null) {
+                            res.redirect("/shop" +
+                                "?message=Error al realizar la compra." +
+                                "&messageType=alert.danger");
+                        } else {
+                            res.redirect("/purchases" +
+                                "?message=Compra realizada correctamente." +
+                                "&messageType=alert.info");
+                        }
+                    })
+                } else {
+                    res.redirect("/shop" +
+                        "?message=Error al realizar la compra. Ya has comprado o eres el autor." +
+                        "&messageType=alert.danger");
+                }
+            });
+
+        });
     });
 
     app.get('/songs/:id', function(req, res) {
@@ -230,10 +248,18 @@ module.exports=function (app, songsRepository, commentsRepository) {
         let options = {};
 
         songsRepository.findSong(filter, options).then(song => {
-
+            let canBuySong = req.session.user !== song.author; //not the author -> can buy song
             let filterComment = {song_id: song._id};
+
             commentsRepository.getComments(filterComment, options).then(comments => {
-                res.render("songs/song.twig", {song: song, comments: comments});
+                let filterPurchases = {user: req.session.user};
+                songsRepository.getPurchases(filterPurchases, options).then(purchases => {
+                    if ( purchases.find(s => s.songId.equals(song._id)) != null )
+                        canBuySong = false;
+
+                    res.render("songs/song.twig", {song: song, comments: comments, canBuy: canBuySong});
+                })
+
             }).catch(error => {
                 res.send("Se ha producido un error al buscar los comentarios " + error)
             });
@@ -242,6 +268,7 @@ module.exports=function (app, songsRepository, commentsRepository) {
             res.send("Se ha producido un error al buscar la canción " + error)
         });
     });
+
 
     app.get('/songs/:kind/:id', function(req, res) {
         let response = 'id: ' + req.params.id + '<br>'

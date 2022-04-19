@@ -10,6 +10,7 @@ let http = require('http');
 
 let fs = require('fs');
 let https = require('https');
+let path = require("path");
 
 /**
  * Get port from environment and store in Express.
@@ -22,8 +23,8 @@ app.set('port', port);
  * Create HTTP server.
  */
 
-let privateKey = fs.readFileSync('bin/certificates/alice.key', 'utf8');
-let certificate = fs.readFileSync('bin/certificates/alice.crt', 'utf8');
+let privateKey = fs.readFileSync(path.resolve(__dirname, './certificates/alice.key'), 'utf8');
+let certificate = fs.readFileSync(path.resolve(__dirname, './certificates/alice.crt'), 'utf8');
 let credentials = {key: privateKey, cert: certificate};
 let server = http.createServer(app);
 let httpsServer = https.createServer(credentials, app);
