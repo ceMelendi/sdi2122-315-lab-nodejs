@@ -64,27 +64,18 @@ module.exports = function (app, songsRepository, usersRepository) {
         try {
             let songId = ObjectId(req.params.id)
             let filter = {_id: songId}
-            let filterSong = {_id: songId, author: req.session.user}
-            songsRepository.findSong(filterSong, {}).then(result => {
-                if (result === null) {
+            songsRepository.deleteSong(filter, {}).then(result => {
+                if (result === null || result.deletedCount === 0) {
                     res.status(404);
-                    res.json({error: "Usuario sin permisos para realizar esta acción."});
+                    res.json({error: "ID inválido o no existe, no se ha borrado el registro."});
                 } else {
-                    songsRepository.deleteSong(filter, {}).then(result => {
-                        if (result === null || result.deletedCount === 0) {
-                            res.status(404);
-                            res.json({error: "ID inválido o no existe, no se ha borrado el registro."});
-                        } else {
-                            res.status(200);
-                            res.send(JSON.stringify(result));
-                        }
-                    }).catch(error => {
-                        res.status(500);
-                        res.json({error: "Se ha producido un error al eliminar la canción."})
-                    });
+                    res.status(200);
+                    res.send(JSON.stringify(result));
                 }
+            }).catch(error => {
+                res.status(500);
+                res.json({error: "Se ha producido un error al eliminar la canción."})
             });
-
         } catch (e) {
             res.status(500);
             res.json({error: "Se ha producido un error, revise que el ID sea válido."})
@@ -105,33 +96,26 @@ module.exports = function (app, songsRepository, usersRepository) {
                 song.kind = req.body.kind;
             if (typeof req.body.price != "undefined" && req.body.price != null)
                 song.price = req.body.price;
-            let filterSong = {_id: songId, author: req.session.user}
-            songsRepository.findSong(filterSong, {}).then(result => {
+            songsRepository.updateSong(song, filter, options).then(result => {
                 if (result === null) {
                     res.status(404);
-                    res.json({error: "Usuario sin permisos para realizar esta acción."});
-                } else {
-                    songsRepository.updateSong(song, filter, options).then(result => {
-                        if (result === null) {
-                            res.status(404);
-                            res.json({error: "ID inválido o no existe, no se ha actualizado la canción."});
-                        }
-                        //La _id No existe o los datos enviados no difieren de los ya almacenados.
-                        else if (result.modifiedCount == 0) {
-                            res.status(409);
-                            res.json({error: "No se ha modificado ninguna canción."});
-                        } else {
-                            res.status(200);
-                            res.json({
-                                message: "Canción modificada correctamente.",
-                                result: result
-                            })
-                        }
-                    }).catch(error => {
-                        res.status(500);
-                        res.json({error: "Se ha producido un error al modificar la canción."})
-                    });
+                    res.json({error: "ID inválido o no existe, no se ha actualizado la canción."});
                 }
+                //La _id No existe o los datos enviados no difieren de los ya almacenados.
+                else if (result.modifiedCount == 0) {
+                    res.status(409);
+                    res.json({error: "No se ha modificado ninguna canción."});
+                }
+                else{
+                    res.status(200);
+                    res.json({
+                        message: "Canción modificada correctamente.",
+                        result: result
+                    })
+                }
+            }).catch(error => {
+                res.status(500);
+                res.json({error : "Se ha producido un error al modificar la canción."})
             });
         } catch (e) {
             res.status(500);
