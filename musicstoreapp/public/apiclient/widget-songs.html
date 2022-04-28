@@ -15,6 +15,7 @@
     </table>
 </div>
 <script>
+    window.history.pushState("", "", "/apiclient/client.html?w=songs");
     let selectedSongId;
     let songs;
     function loadSongs() {
@@ -97,11 +98,11 @@
     function sortByTitle() {
         if (titleDesc) {
             songs.sort(function (a, b) {
-                return (a.title - b.title);
+                return (b.title - a.title);
             });
         } else {
             songs.sort(function (a, b) {
-                return (b.title - a.title);
+                return (a.title - b.title);
             });
         }
         updateSongsTable(songs);
