@@ -1,7 +1,7 @@
 const {ObjectId} = require("mongodb");
-module.exports=function (app, songsRepository, commentsRepository) {
+module.exports = function (app, songsRepository, commentsRepository) {
 
-    app.get("/shop", function (req, res){
+    app.get("/shop", function (req, res) {
         let filter = {};
         let options = {sort: {title: 1}};
         if (req.query.search != null && typeof (req.query.search) != "undefined" &&
@@ -30,29 +30,29 @@ module.exports=function (app, songsRepository, commentsRepository) {
                 currentPage: page
             }
             res.render("shop.twig", response);
-       }).catch(error => {
-           res.send("Se ha producido un error al listar las canciones " + error);
-       })
+        }).catch(error => {
+            res.send("Se ha producido un error al listar las canciones " + error);
+        })
     });
 
-    app.get("/songs", function(req, res) {
+    app.get("/songs", function (req, res) {
         let songs = [{
             "title": "Blank Space",
             "price": "1.2"
-        },{
+        }, {
             "title": "See you again",
             "price": "1.3"
-        },{
+        }, {
             "title": "Uptown funk",
             "price": "1.1"
-        },{
+        }, {
             "title": "Don't Wanna Cry",
             "price": "1.4"
         }];
 
 
         let response = {
-            seller:'Tienda de canciones',
+            seller: 'Tienda de canciones',
             songs: songs
         };
 
@@ -63,7 +63,7 @@ module.exports=function (app, songsRepository, commentsRepository) {
         res.render("songs/add.twig");
     });
 
-    app.post('/songs/add', function (req,res){
+    app.post('/songs/add', function (req, res) {
         let song = {
             title: req.body.title,
             kind: req.body.kind,
@@ -71,13 +71,12 @@ module.exports=function (app, songsRepository, commentsRepository) {
             author: req.session.user
         };
 
-        songsRepository.insertSong(song, function (songId){
+        songsRepository.insertSong(song, function (songId) {
             if (songId == null) {
                 res.redirect("/publications" +
                     "?message=Error al insertar canción." +
                     "&messageType=alert.danger");
-            }
-            else {
+            } else {
                 if (req.files != null) {
                     let imagen = req.files.cover;
                     imagen.mv(app.get("uploadPath") + '/public/covers/' + songId + '.png', function (err) {
@@ -103,7 +102,8 @@ module.exports=function (app, songsRepository, commentsRepository) {
                         }
                     })
                 } else {
-                    res.redirect('/publications');res.redirect("/publications" +
+                    res.redirect('/publications');
+                    res.redirect("/publications" +
                         "?message=Canción añadida correctamente." +
                         "&messageType=alert.info");
                 }
@@ -111,12 +111,12 @@ module.exports=function (app, songsRepository, commentsRepository) {
         })
     });
 
-    app.get('/add', function(req, res) {
+    app.get('/add', function (req, res) {
         let response = parseInt(req.query.num1) + parseInt(req.query.num2);
         res.send(String(response));
     });
 
-    app.get('/songs/edit/:id', function (req, res){
+    app.get('/songs/edit/:id', function (req, res) {
         let filter = {_id: ObjectId(req.params.id)};
         songsRepository.findSong(filter, {}).then(song => {
             res.render("songs/edit.twig", {song: song});
@@ -127,15 +127,15 @@ module.exports=function (app, songsRepository, commentsRepository) {
         });
     });
 
-    app.post('/songs/edit/:id', function (req,res) {
-       let song = {
-           title: req.body.title,
-           kind: req.body.kind,
-           price: req.body.price,
-           author: req.session.user
-       };
-       let songId = req.params.id;
-       let filter = {_id: ObjectId(songId)}
+    app.post('/songs/edit/:id', function (req, res) {
+        let song = {
+            title: req.body.title,
+            kind: req.body.kind,
+            price: req.body.price,
+            author: req.session.user
+        };
+        let songId = req.params.id;
+        let filter = {_id: ObjectId(songId)}
         //que no se cree un documento nuevo, si no existe
         const options = {upsert: false}
         songsRepository.updateSong(song, filter, options).then(result => {
@@ -243,7 +243,7 @@ module.exports=function (app, songsRepository, commentsRepository) {
         });
     });
 
-    app.get('/songs/:id', function(req, res) {
+    app.get('/songs/:id', function (req, res) {
         let filter = {_id: ObjectId(req.params.id)};
         let options = {};
 
@@ -254,12 +254,26 @@ module.exports=function (app, songsRepository, commentsRepository) {
             commentsRepository.getComments(filterComment, options).then(comments => {
                 let filterPurchases = {user: req.session.user};
                 songsRepository.getPurchases(filterPurchases, options).then(purchases => {
-                    if ( purchases.find(s => s.songId.equals(song._id)) != null )
+                    if (purchases.find(s => s.songId.equals(song._id)) != null)
                         canBuySong = false;
-
-                    res.render("songs/song.twig", {song: song, comments: comments, canBuy: canBuySong});
-                })
-
+                    let settings = {
+                        url: "https://www.freeforexapi.com/api/live?pairs=EURUSD",
+                        method: "get",
+                        headers: {"token": "ejemplo",}
+                    }
+                    let rest = app.get("rest");
+                    rest(settings, function (error, response, body) {
+                        console.log("cod: " + response.statusCode + " Cuerpo :" + body);
+                        let responseObject = JSON.parse(body);
+                        let rateUSD = responseObject.rates.EURUSD.rate;
+                        // nuevo campo "usd" redondeado a dos decimales
+                        let songValue = rateUSD * song.price;
+                        song.usd = Math.round(songValue * 100) / 100;
+                        res.render("songs/song.twig", {song: song, comments: comments, canBuy: canBuySong});
+                    })
+                }).catch(error => {
+                    res.send("Se ha producido un error al buscar las compras " + error)
+                });
             }).catch(error => {
                 res.send("Se ha producido un error al buscar los comentarios " + error)
             });
@@ -270,14 +284,14 @@ module.exports=function (app, songsRepository, commentsRepository) {
     });
 
 
-    app.get('/songs/:kind/:id', function(req, res) {
+    app.get('/songs/:kind/:id', function (req, res) {
         let response = 'id: ' + req.params.id + '<br>'
             + 'Tipo de música: ' + req.params.kind;
         res.send(response);
     });
 
     app.get('/publications', function (req, res) {
-        let filter = {author : req.session.user};
+        let filter = {author: req.session.user};
         let options = {sort: {title: 1}};
         songsRepository.getSongs(filter, options).then(songs => {
             res.render("publications.twig", {songs: songs});
